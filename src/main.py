@@ -58,7 +58,7 @@ def main(log: logging.Logger, config: Config):
     restarter = Restarter(stats)
 
     log.info(f"Starting a GUI thread.")
-    guiThread = GuiThread(log, config, stats, locks)
+    guiThread = GuiThread(log, config, stats, locks, rawTable=True)
     guiThread.daemon = True
     guiThread.start()
 

@@ -82,7 +82,7 @@ class Browser:
                     #Handles all IMAP requests
                     req = self.IMAPHook(imapusername, imappassword, imapserver)
 
-                    self.stats.updateStatus(self.account, f"[green]FETCHED 2FA CODE")
+                    self.stats.updateStatus(self.account, f"[green]FETCHED 2FA CODE[/green]")
 
                     data = {"type": "multifactor", "code": req.code, "rememberDevice": True}
                     res = self.client.put(
@@ -94,7 +94,7 @@ class Browser:
 
                 else:
                     twoFactorCode = input(f"Enter 2FA code for {self.account}:\n")
-                    self.stats.updateStatus(self.account, f"[green]CODE SENT")
+                    self.stats.updateStatus(self.account, f"[green]CODE SENT[/green]")
                     data = {"type": "multifactor", "code": twoFactorCode, "rememberDevice": True}
                     res = self.client.put(
                         "https://auth.riotgames.com/api/v1/authorization", json=data)

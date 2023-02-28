@@ -37,11 +37,11 @@ class FarmThread(Thread):
         Start watching every live match
         """
         try:
-            self.stats.updateStatus(self.account, "[yellow]LOGIN")
+            self.stats.updateStatus(self.account, "[yellow]LOGIN[/yellow]")
 
             if self.browser.login(self.config.getAccount(self.account)["username"], self.config.getAccount(self.account)["password"], self.config.getAccount(self.account)["imapUsername"], self.config.getAccount(self.account)["imapPassword"], self.config.getAccount(self.account)["imapServer"], self.locks["refreshLock"]):
                 self.stats.resetLoginFailed(self.account)
-                self.stats.updateStatus(self.account, "[green]LIVE")
+                self.stats.updateStatus(self.account, "[green]LIVE[/green]")
                 _, totalDrops = self.browser.checkNewDrops(0)
                 self.stats.setTotalDrops(self.account, totalDrops)
                 while True:
@@ -52,9 +52,9 @@ class FarmThread(Thread):
                         liveMatchesStatus = []
                         for m in self.sharedData.getLiveMatches().values():
                             if m.league in watchFailed:
-                                self.stats.updateStatus(self.account, "[red]RIOT SERVERS OVERLOADED - PLEASE WAIT")
+                                self.stats.updateStatus(self.account, "[red]RIOT SERVERS OVERLOADED - PLEASE WAIT[/red]")
                             else:
-                                self.stats.updateStatus(self.account, "[green]LIVE")
+                                self.stats.updateStatus(self.account, "[green]LIVE[/green]")
                             liveMatchesStatus.append(m.league)
                         self.log.debug(f"Live matches: {', '.join(liveMatchesStatus)}")
                         liveMatchesMsg = f"{', '.join(liveMatchesStatus)}"
@@ -77,12 +77,12 @@ class FarmThread(Thread):
                 self.log.error(f"Login for {self.account} FAILED!")
                 self.stats.addLoginFailed(self.account)
                 if self.stats.getFailedLogins(self.account) < 3:
-                    self.stats.updateStatus(self.account, "[red]LOGIN FAILED - WILL RETRY SOON")
+                    self.stats.updateStatus(self.account, "[red]LOGIN FAILED - WILL RETRY SOON[/red]")
                 else:
-                    self.stats.updateStatus(self.account, "[red]LOGIN FAILED")
+                    self.stats.updateStatus(self.account, "[red]LOGIN FAILED[/red]")
         except InvalidIMAPCredentialsException:
             self.log.error(f"IMAP login failed for {self.account}")
-            self.stats.updateStatus(self.account, "[red]IMAP LOGIN FAILED")
+            self.stats.updateStatus(self.account, "[red]IMAP LOGIN FAILED[/red]")
             self.stats.updateThreadStatus(self.account)
         except Exception:
             self.log.exception(f"Error in {self.account}. The program will try to recover.")

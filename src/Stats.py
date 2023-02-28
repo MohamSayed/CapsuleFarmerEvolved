@@ -11,7 +11,7 @@ class Stats:
             "sessionDrops": 0,
             "lastDrop": "N/A",
             "liveMatches": "",
-            "status": "[yellow]WAIT",
+            "status": "[yellow]WAIT[/yellow]",
             "failedLoginCounter": 0,
             "lastDropCheck": int(datetime.now().timestamp()*1e3),
             "valid" : True

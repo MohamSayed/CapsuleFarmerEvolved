@@ -3,13 +3,15 @@ from time import sleep
 from rich.live import Live
 from rich.table import Table
 from rich.console import Console
+from rich.text import Text
+
 
 class GuiThread(Thread):
     """
     A thread that creates a capsule farm for a given account
     """
 
-    def __init__(self, log, config, stats, locks):
+    def __init__(self, log, config, stats, locks, rawTable=False):
         """
         Initializes the FarmThread
 
@@ -22,41 +24,74 @@ class GuiThread(Thread):
         self.config = config
         self.stats = stats
         self.locks = locks
-    
+        self.rawTable = rawTable
+
     def generateTable(self):
-        table = Table()
-        table.add_column("Account")
-        table.add_column("Status")
-        table.add_column("Live matches")
-        table.add_column("Heartbeat")
-        table.add_column("Last drop")
-        table.add_column("Session Drops")
-        if self.config.showHistoricalDrops:
-            table.add_column("Lifetime Drops")
-
-        for acc in self.stats.accountData:
-            status = self.stats.accountData[acc]["status"]
+        if not self.rawTable:
+            print("table")
+            table = Table()
+            table.add_column("Account")
+            table.add_column("Status")
+            table.add_column("Live matches")
+            table.add_column("Heartbeat")
+            table.add_column("Last drop")
+            table.add_column("Session Drops")
             if self.config.showHistoricalDrops:
-                table.add_row(f"{acc}", f"{status}", f"{self.stats.accountData[acc]['liveMatches']}", f"{self.stats.accountData[acc]['lastCheck']}", f"{self.stats.accountData[acc]['lastDrop']}", f"{self.stats.accountData[acc]['sessionDrops']}", f"{self.stats.accountData[acc]['totalDrops']}")
-            else:
-                table.add_row(f"{acc}", f"{status}", f"{self.stats.accountData[acc]['liveMatches']}", f"{self.stats.accountData[acc]['lastCheck']}", f"{self.stats.accountData[acc]['lastDrop']}", f"{self.stats.accountData[acc]['sessionDrops']}")
+                table.add_column("Lifetime Drops")
 
-        return table
+            for acc in self.stats.accountData:
+                status = self.stats.accountData[acc]["status"]
+                if self.config.showHistoricalDrops:
+                    table.add_row(f"{acc}", f"{status}", f"{self.stats.accountData[acc]['liveMatches']}", f"{self.stats.accountData[acc]['lastCheck']}",
+                                  f"{self.stats.accountData[acc]['lastDrop']}", f"{self.stats.accountData[acc]['sessionDrops']}", f"{self.stats.accountData[acc]['totalDrops']}")
+
+                else:
+                    table.add_row(f"{acc}", f"{status}", f"{self.stats.accountData[acc]['liveMatches']}", f"{self.stats.accountData[acc]['lastCheck']}",
+                                  f"{self.stats.accountData[acc]['lastDrop']}", f"{self.stats.accountData[acc]['sessionDrops']}")
+
+            return table
+
+        else:
+            for acc in self.stats.accountData:
+                status = self.stats.accountData[acc]["status"]
+                data = [
+                    f"Account: {acc}",
+                    f"Status: {status}",
+                    f"live Matches: {self.stats.accountData[acc]['liveMatches']}",
+                    f"last Check: {self.stats.accountData[acc]['lastCheck']}",
+                    f"Last Drop: {self.stats.accountData[acc]['lastDrop']}",
+                    f"Session Drops: {self.stats.accountData[acc]['sessionDrops']}",
+                    f"Total Drops: {self.stats.accountData[acc]['totalDrops']}"
+                ]
+                table = " - ".join(data) + "\n"
+            return table
 
     def run(self):
         """
         Report the status of all accounts
         """
         console = Console(force_terminal=True)
-        with Live(self.generateTable(), auto_refresh=False, console=console) as live:
-            while True:
-                live.update(self.generateTable())
-                sleep(1)
-                self.locks["refreshLock"].acquire()
-                live.refresh()
-                if self.locks["refreshLock"].locked():
-                    self.locks["refreshLock"].release()
-                
+        if not self.rawTable:
+            with Live(self.generateTable(), auto_refresh=False, console=console) as live:
+                while True:
+                    live.update(self.generateTable())
+                    sleep(1)
+                    self.locks["refreshLock"].acquire()
+                    live.refresh()
+                    if self.locks["refreshLock"].locked():
+                        self.locks["refreshLock"].release()
+
+        else:
+            with Live("", auto_refresh=False, console=console) as live:
+                while True:
+                    live.update(self.generateTable())
+                    # print(self.generateTable())
+                    sleep(1)
+                    self.locks["refreshLock"].acquire()
+                    live.refresh()
+                    if self.locks["refreshLock"].locked():
+                        self.locks["refreshLock"].release()
+
     def stop(self):
         """
         Try to stop gracefully
