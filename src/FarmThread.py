@@ -9,12 +9,13 @@ import requests
 
 from SharedData import SharedData
 
+
 class FarmThread(Thread):
     """
     A thread that creates a capsule farm for a given account
     """
 
-    def __init__(self, log, config, account, stats, locks, sharedData: SharedData):
+    def __init__(self, log, config, account, stats, locks, sharedData: SharedData, raw=False):
         """
         Initializes the FarmThread
 
@@ -28,20 +29,24 @@ class FarmThread(Thread):
         self.config = config
         self.account = account
         self.stats = stats
-        self.browser = Browser(self.log, self.stats, self.config, self.account, sharedData)
+        self.browser = Browser(self.log, self.stats,
+                               self.config, self.account, sharedData)
         self.locks = locks
         self.sharedData = sharedData
+        self.raw = raw
 
     def run(self):
         """
         Start watching every live match
         """
         try:
-            self.stats.updateStatus(self.account, "[yellow]LOGIN[/yellow]")
+            self.stats.updateStatus(
+                self.account, "[yellow]LOGIN[/yellow]" if self.raw else "LOGIN")
 
             if self.browser.login(self.config.getAccount(self.account)["username"], self.config.getAccount(self.account)["password"], self.config.getAccount(self.account)["imapUsername"], self.config.getAccount(self.account)["imapPassword"], self.config.getAccount(self.account)["imapServer"], self.locks["refreshLock"]):
                 self.stats.resetLoginFailed(self.account)
-                self.stats.updateStatus(self.account, "[green]LIVE[/green]")
+                self.stats.updateStatus(
+                    self.account, "[green]LIVE[/green]" if self.raw else "Live")
                 _, totalDrops = self.browser.checkNewDrops(0)
                 self.stats.setTotalDrops(self.account, totalDrops)
                 while True:
@@ -52,24 +57,31 @@ class FarmThread(Thread):
                         liveMatchesStatus = []
                         for m in self.sharedData.getLiveMatches().values():
                             if m.league in watchFailed:
-                                self.stats.updateStatus(self.account, "[red]RIOT SERVERS OVERLOADED - PLEASE WAIT[/red]")
+                                self.stats.updateStatus(
+                                    self.account, "[red]RIOT SERVERS OVERLOADED - PLEASE WAIT[/red]" if self.raw else "RIOT SERVERS OVERLOADED - PLEASE WAIT")
                             else:
-                                self.stats.updateStatus(self.account, "[green]LIVE[/green]")
+                                self.stats.updateStatus(
+                                    self.account, "[green]LIVE[/green]" if self.raw else "LIVE")
                             liveMatchesStatus.append(m.league)
-                        self.log.debug(f"Live matches: {', '.join(liveMatchesStatus)}")
+                        self.log.debug(
+                            f"Live matches: {', '.join(liveMatchesStatus)}")
                         liveMatchesMsg = f"{', '.join(liveMatchesStatus)}"
-                        newDrops, totalDrops = self.browser.checkNewDrops(self.stats.getLastDropCheck(self.account))
+                        newDrops, totalDrops = self.browser.checkNewDrops(
+                            self.stats.getLastDropCheck(self.account))
                         self.stats.setTotalDrops(self.account, totalDrops)
-                        self.stats.updateLastDropCheck(self.account, int(datetime.now().timestamp() * 1e3))
+                        self.stats.updateLastDropCheck(
+                            self.account, int(datetime.now().timestamp() * 1e3))
                     else:
                         liveMatchesMsg = self.sharedData.getTimeUntilNextMatch()
                     try:
                         if newDrops and getLeagueFromID(newDrops[-1]["leagueID"]):
-                            self.stats.update(self.account, len(newDrops), liveMatchesMsg, getLeagueFromID(newDrops[-1]["leagueID"]))
+                            self.stats.update(self.account, len(
+                                newDrops), liveMatchesMsg, getLeagueFromID(newDrops[-1]["leagueID"]))
                         else:
                             self.stats.update(self.account, 0, liveMatchesMsg)
                     except (IndexError, KeyError):
-                        self.stats.update(self.account, len(newDrops), liveMatchesMsg)
+                        self.stats.update(self.account, len(
+                            newDrops), liveMatchesMsg)
                     if self.config.connectorDrops:
                         self.__notifyConnectorDrops(newDrops)
                     sleep(Browser.STREAM_WATCH_INTERVAL)
@@ -77,15 +89,19 @@ class FarmThread(Thread):
                 self.log.error(f"Login for {self.account} FAILED!")
                 self.stats.addLoginFailed(self.account)
                 if self.stats.getFailedLogins(self.account) < 3:
-                    self.stats.updateStatus(self.account, "[red]LOGIN FAILED - WILL RETRY SOON[/red]")
+                    self.stats.updateStatus(
+                        self.account, "[red]LOGIN FAILED - WILL RETRY SOON[/red]" if self.raw else "LOGIN FAILED - WILL RETRY SOON")
                 else:
-                    self.stats.updateStatus(self.account, "[red]LOGIN FAILED[/red]")
+                    self.stats.updateStatus(
+                        self.account, "[red]LOGIN FAILED[/red]" if self.raw else "LOGIN FAILED")
         except InvalidIMAPCredentialsException:
             self.log.error(f"IMAP login failed for {self.account}")
-            self.stats.updateStatus(self.account, "[red]IMAP LOGIN FAILED[/red]")
+            self.stats.updateStatus(
+                self.account, "[red]IMAP LOGIN FAILED[/red]" if self.raw else "IMAP LOGIN FAILED")
             self.stats.updateThreadStatus(self.account)
         except Exception:
-            self.log.exception(f"Error in {self.account}. The program will try to recover.")
+            self.log.exception(
+                f"Error in {self.account}. The program will try to recover.")
 
     def stop(self):
         """
@@ -105,18 +121,20 @@ class FarmThread(Thread):
                     embed = {
                         "title": f"[{self.account}] {title}",
                         "description": f"We claimed an **{reward}** from <https://lolesports.com/rewards>",
-                        "image" : {"url": f"{thumbnail}"},
+                        "image": {"url": f"{thumbnail}"},
                         "thumbnail": {"url": f"{rewardImage}"},
                         "color": 6676471,
                     }
 
                     params = {
-                        "username" : "CapsuleFarmerEvolved",
+                        "username": "CapsuleFarmerEvolved",
                         "embeds": [embed]
                     }
-                    requests.post(self.config.connectorDrops, headers={"Content-type":"application/json"}, json=params)
+                    requests.post(self.config.connectorDrops, headers={
+                                  "Content-type": "application/json"}, json=params)
             else:
                 requests.post(self.config.connectorDrops, json=newDrops)
+
 
 def getLeagueFromID(leagueId):
     allLeagues = getLeagues()
@@ -124,6 +142,8 @@ def getLeagueFromID(leagueId):
         if leagueId in league["id"]:
             return league["name"]
     return ""
+
+
 def getLeagues():
     headers = {"Origin": "https://lolesports.com", "Referrer": "https://lolesports.com",
                "x-api-key": Config.RIOT_API_KEY}

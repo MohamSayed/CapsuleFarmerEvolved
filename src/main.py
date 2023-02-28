@@ -39,7 +39,7 @@ def init() -> tuple[logging.Logger, Config]:
     print("*    If you need help with the app, join our Discord    *")
     print("*             https://discord.gg/ebm5MJNvHU             *")
     print(
-        f"*                 Started: [green]{strftime('%b %d, %H:%M', localtime())}[/]                *")
+        f"*     Started: [green]{strftime('%b %d, %H:%M', localtime())}[/green]   *")
     print("*********************************************************")
     print()
 
@@ -99,7 +99,8 @@ def main(log: logging.Logger, config: Config, args = None):
                 log.warning(f"Thread {account} has finished.")
                 restarter.setRestartDelay(account)
                 stats.updateStatus(
-                    account, f"[red]ERROR - restart at {restarter.getNextStart(account).strftime('%H:%M:%S')}, failed logins: {stats.getFailedLogins(account)}[/red]")
+                    account, f"[red]ERROR - restart at {restarter.getNextStart(account).strftime('%H:%M:%S')}, failed logins: {stats.getFailedLogins(account)}[/red]" if args.raw 
+                    else f"ERROR - restart at {restarter.getNextStart(account).strftime('%H:%M:%S')}, failed logins: {stats.getFailedLogins(account)}")
                 log.warning(
                     f"Thread {account} has finished and will restart at {restarter.getNextStart(account).strftime('%H:%M:%S')}. Number of consecutively failed logins: {stats.getFailedLogins(account)}")
 
@@ -121,4 +122,4 @@ if __name__ == '__main__':
         if isinstance(log, logging.Logger):
             log.error(f"An error has occurred: {e}")
         else:
-            print(f'[red]An error has occurred: {e}[/red]')
+            print(f'[red]An error has occurred: {e}[/red]' if args.raw else f'An error has occurred: {e}')

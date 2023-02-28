@@ -70,7 +70,7 @@ class GuiThread(Thread):
         """
         Report the status of all accounts
         """
-        console = Console(force_terminal=True)
+        console = Console(force_terminal=True, markup = False)
         if self.rawTable != True:
             with Live(self.generateTable(), auto_refresh=False, console=console) as live:
                 while True:
