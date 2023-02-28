@@ -27,51 +27,51 @@ class GuiThread(Thread):
         self.rawTable = rawTable
 
     def generateTable(self):
-        if not self.rawTable:
-            print("table")
-            table = Table()
-            table.add_column("Account")
-            table.add_column("Status")
-            table.add_column("Live matches")
-            table.add_column("Heartbeat")
-            table.add_column("Last drop")
-            table.add_column("Session Drops")
+    
+        table = Table()
+        table.add_column("Account")
+        table.add_column("Status")
+        table.add_column("Live matches")
+        table.add_column("Heartbeat")
+        table.add_column("Last drop")
+        table.add_column("Session Drops")
+        if self.config.showHistoricalDrops:
+            table.add_column("Lifetime Drops")
+
+        for acc in self.stats.accountData:
+            status = self.stats.accountData[acc]["status"]
             if self.config.showHistoricalDrops:
-                table.add_column("Lifetime Drops")
+                table.add_row(f"{acc}", f"{status}", f"{self.stats.accountData[acc]['liveMatches']}", f"{self.stats.accountData[acc]['lastCheck']}",
+                                f"{self.stats.accountData[acc]['lastDrop']}", f"{self.stats.accountData[acc]['sessionDrops']}", f"{self.stats.accountData[acc]['totalDrops']}")
 
-            for acc in self.stats.accountData:
-                status = self.stats.accountData[acc]["status"]
-                if self.config.showHistoricalDrops:
-                    table.add_row(f"{acc}", f"{status}", f"{self.stats.accountData[acc]['liveMatches']}", f"{self.stats.accountData[acc]['lastCheck']}",
-                                  f"{self.stats.accountData[acc]['lastDrop']}", f"{self.stats.accountData[acc]['sessionDrops']}", f"{self.stats.accountData[acc]['totalDrops']}")
+            else:
+                table.add_row(f"{acc}", f"{status}", f"{self.stats.accountData[acc]['liveMatches']}", f"{self.stats.accountData[acc]['lastCheck']}",
+                                f"{self.stats.accountData[acc]['lastDrop']}", f"{self.stats.accountData[acc]['sessionDrops']}")
 
-                else:
-                    table.add_row(f"{acc}", f"{status}", f"{self.stats.accountData[acc]['liveMatches']}", f"{self.stats.accountData[acc]['lastCheck']}",
-                                  f"{self.stats.accountData[acc]['lastDrop']}", f"{self.stats.accountData[acc]['sessionDrops']}")
+        return table
 
-            return table
-
-        else:
-            for acc in self.stats.accountData:
-                status = self.stats.accountData[acc]["status"]
-                data = [
-                    f"Account: {acc}",
-                    f"Status: {status}",
-                    f"live Matches: {self.stats.accountData[acc]['liveMatches']}",
-                    f"last Check: {self.stats.accountData[acc]['lastCheck']}",
-                    f"Last Drop: {self.stats.accountData[acc]['lastDrop']}",
-                    f"Session Drops: {self.stats.accountData[acc]['sessionDrops']}",
-                    f"Total Drops: {self.stats.accountData[acc]['totalDrops']}"
-                ]
-                table = " - ".join(data) + "\n"
-            return table
+    def generateRawTable(self):
+        table = []
+        for acc in self.stats.accountData:
+            status = self.stats.accountData[acc]["status"]
+            accountData = [
+                f"Account: {acc}",
+                f"Status: {status}",
+                f"live Matches: {self.stats.accountData[acc]['liveMatches']}",
+                f"Heartbeat: {self.stats.accountData[acc]['lastCheck']}",
+                f"Last Drop: {self.stats.accountData[acc]['lastDrop']}",
+                f"Session Drops: {self.stats.accountData[acc]['sessionDrops']}",
+                f"Total Drops: {self.stats.accountData[acc]['totalDrops']}"
+            ]
+            table.append(" - ".join(accountData))
+        return "\n".join(table)
 
     def run(self):
         """
         Report the status of all accounts
         """
         console = Console(force_terminal=True)
-        if not self.rawTable:
+        if self.rawTable != True:
             with Live(self.generateTable(), auto_refresh=False, console=console) as live:
                 while True:
                     live.update(self.generateTable())
@@ -84,8 +84,7 @@ class GuiThread(Thread):
         else:
             with Live("", auto_refresh=False, console=console) as live:
                 while True:
-                    live.update(self.generateTable())
-                    # print(self.generateTable())
+                    live.update(self.generateRawTable())
                     sleep(1)
                     self.locks["refreshLock"].acquire()
                     live.refresh()

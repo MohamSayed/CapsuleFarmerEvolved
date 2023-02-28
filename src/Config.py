@@ -64,7 +64,7 @@ class Config:
             if remoteBestStreamsFile.status_code == 200:
                 self.bestStreams = remoteBestStreamsFile.text.split()
         except Exception as ex:
-            print(f"[red]CRITICAL ERROR: Beststreams couldn't be loaded. Are you connected to the internet?")
+            print(f"[red]CRITICAL ERROR: Beststreams couldn't be loaded. Are you connected to the internet?[/red]")
             print("Press any key to exit...")
             input()
             raise ex
