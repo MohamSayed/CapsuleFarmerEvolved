@@ -122,4 +122,4 @@ if __name__ == '__main__':
         if isinstance(log, logging.Logger):
             log.error(f"An error has occurred: {e}")
         else:
-            print(f'[red]An error has occurred: {e}[/red]' if args.raw else f'An error has occurred: {e}')
+            print(f'[red]An error has occurred: {e}[/red]')

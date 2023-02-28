@@ -27,7 +27,7 @@ class GuiThread(Thread):
         self.rawTable = rawTable
 
     def generateTable(self):
-    
+
         table = Table()
         table.add_column("Account")
         table.add_column("Status")
@@ -42,11 +42,11 @@ class GuiThread(Thread):
             status = self.stats.accountData[acc]["status"]
             if self.config.showHistoricalDrops:
                 table.add_row(f"{acc}", f"{status}", f"{self.stats.accountData[acc]['liveMatches']}", f"{self.stats.accountData[acc]['lastCheck']}",
-                                f"{self.stats.accountData[acc]['lastDrop']}", f"{self.stats.accountData[acc]['sessionDrops']}", f"{self.stats.accountData[acc]['totalDrops']}")
+                              f"{self.stats.accountData[acc]['lastDrop']}", f"{self.stats.accountData[acc]['sessionDrops']}", f"{self.stats.accountData[acc]['totalDrops']}")
 
             else:
                 table.add_row(f"{acc}", f"{status}", f"{self.stats.accountData[acc]['liveMatches']}", f"{self.stats.accountData[acc]['lastCheck']}",
-                                f"{self.stats.accountData[acc]['lastDrop']}", f"{self.stats.accountData[acc]['sessionDrops']}")
+                              f"{self.stats.accountData[acc]['lastDrop']}", f"{self.stats.accountData[acc]['sessionDrops']}")
 
         return table
 
@@ -70,7 +70,7 @@ class GuiThread(Thread):
         """
         Report the status of all accounts
         """
-        console = Console(force_terminal=True, markup = False)
+        console = Console(force_terminal=True, no_color=self.rawTable)
         if self.rawTable != True:
             with Live(self.generateTable(), auto_refresh=False, console=console) as live:
                 while True:
